@@ -1,5 +1,6 @@
 package dev.memphis
 
+import io.nats.client.impl.Headers
 import kotlin.random.Random
 import kotlin.reflect.KClass
 import kotlinx.serialization.KSerializer
@@ -20,7 +21,7 @@ internal fun extendNameWithRandSuffix(name: String) =
 internal fun generateRandomHex(length: Int) =
     List(length * 2) { Random.nextInt(0, 16).toString(16) }.joinToString("")
 
-
+internal fun Headers.toStringAll() = entrySet().joinToString(prefix = "(", postfix = ")") { "${it.key} -> ${it.value}" }
 internal open class EnumOrdinalSerilizer<E : Enum<E>>(
     private val kClass: KClass<E>,
     private val ordinalOffset: Int = 0

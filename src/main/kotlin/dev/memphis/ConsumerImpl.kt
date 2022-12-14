@@ -1,6 +1,7 @@
 package dev.memphis
 
 import io.nats.client.JetStreamSubscription
+import java.nio.charset.Charset
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -54,7 +55,7 @@ internal class ConsumerImpl constructor(
             while (true) {
                 subscription.fetch(batchSize, batchMaxTimeToWait.toJavaDuration())
                     .forEach {
-                        logger.debug { "Received Message: ${it.data} Headers: ${it.headers}" }
+                        logger.trace { "Received Message: ${it.data.toString(Charset.defaultCharset())} Headers: ${it.headers.toStringAll()}" }
                         send(Message(it, memphis, group))
                     }
 

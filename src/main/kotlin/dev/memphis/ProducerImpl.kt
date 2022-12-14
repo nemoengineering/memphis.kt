@@ -43,7 +43,7 @@ class ProducerImpl(
 
         options.messageId?.also { options.headers.putUnchecked("msg-id", it) }
 
-        logger.debug { "Publish Message: $message Headers: ${options.headers}" }
+        logger.trace { "Publish Message: ${message.toString(Charset.defaultCharset())} Headers: ${options.headers.headers.toStringAll()}" }
 
         val data = validateMessage(message)
 
