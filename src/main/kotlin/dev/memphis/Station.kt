@@ -23,9 +23,9 @@ interface Station {
     val idempotencyWindow: Duration
     val schemaName: String?
 
-    fun attachSchema(schemaName: String)
+    suspend fun attachSchema(schemaName: String)
 
-    fun detachSchema()
+    suspend fun detachSchema()
 
     suspend fun destroy()
 

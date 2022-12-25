@@ -15,9 +15,11 @@ interface Consumer {
 
     suspend fun consume(): Flow<Message>
 
+    suspend fun fetch(): Flow<Message>
+
     fun stopConsuming()
 
-    fun destroy()
+    suspend fun destroy()
 
     class Options {
         var consumerGroup: String? = null

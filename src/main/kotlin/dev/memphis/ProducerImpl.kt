@@ -5,11 +5,9 @@ import io.nats.client.PublishOptions
 import io.nats.client.api.PublishAck
 import io.nats.client.impl.NatsMessage
 import java.nio.charset.Charset
-import java.util.concurrent.CompletableFuture
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import mu.KotlinLogging
@@ -27,14 +25,14 @@ class ProducerImpl(
     }
 
     override suspend fun produce(message: ByteArray, options: (Producer.ProduceOptions.() -> Unit)?) {
-        val res = callProduce(message, options).await()
+        val res = callProduce(message, options)
         if (res.hasError()) throw MemphisError(res.error)
     }
 
     private suspend fun callProduce(
         message: ByteArray,
         opts: (Producer.ProduceOptions.() -> Unit)? = null
-    ): CompletableFuture<PublishAck> {
+    ): PublishAck {
 
         val options = opts?.let { Producer.ProduceOptions().apply(it) } ?: Producer.ProduceOptions()
 
@@ -54,7 +52,7 @@ class ProducerImpl(
             .build()
 
         val pubOpts = PublishOptions.builder().streamTimeout(options.ackWait.toJavaDuration()).build()
-        return memphis.brokerPublish(natsMsg, pubOpts)
+        return memphis.brokerPublish(natsMsg, pubOpts).await()
     }
 
 
@@ -92,7 +90,7 @@ class ProducerImpl(
     private fun getSchema(): Schema =
         memphis.getStationSchema(stationName)
 
-    override fun destroy() {
+    override suspend fun destroy() {
         memphis.destroyResource(this)
     }
 
@@ -107,7 +105,7 @@ class ProducerImpl(
         put("req_version", 1)
     }
 
-    override fun handleCreationResponse(msg: Message) {
+    override suspend fun handleCreationResponse(msg: Message) {
         val res = try {
             Json.decodeFromString<CreateProducerResponse>(msg.data.toString(Charset.defaultCharset()))
         } catch (_: Exception) {
@@ -115,9 +113,7 @@ class ProducerImpl(
         }
 
         if (res.error != "") throw MemphisError(res.error)
-        runBlocking {
-            memphis.stationUpdateManager.applySchema(stationName, res.schemaUpdate)
-        }
+        memphis.stationUpdateManager.applySchema(stationName, res.schemaUpdate)
     }
 
     override fun getDestructionSubject(): String =

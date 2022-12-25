@@ -21,11 +21,11 @@ class StationImpl(
             return memphis.getStationSchema(name).name
         }
 
-    override fun attachSchema(schemaName: String) {
+    override suspend fun attachSchema(schemaName: String) {
         memphis.attachSchema(schemaName, name)
     }
 
-    override fun detachSchema() {
+    override suspend fun detachSchema() {
         memphis.detachSchema(name)
     }
 

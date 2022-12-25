@@ -2,13 +2,19 @@ package dev.memphis
 
 import io.nats.client.JetStreamSubscription
 import java.nio.charset.Charset
+import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.isActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
@@ -45,9 +51,7 @@ internal class ConsumerImpl constructor(
     }
 
     private suspend fun startConsumeLoop() = channelFlow {
-        pingConsumer()
-
-        subscribeDlq {
+         subscribeDlq {
             logger.debug { "Received DLQ Message: ${it.data} Headers: ${it.headers}" }
             send(it)
         }
@@ -55,6 +59,7 @@ internal class ConsumerImpl constructor(
             while (true) {
                 subscription.fetch(batchSize, batchMaxTimeToWait.toJavaDuration())
                     .forEach {
+                        println("Received Message")
                         logger.trace { "Received Message: ${it.data.toString(Charset.defaultCharset())} Headers: ${it.headers.toStringAll()}" }
                         send(Message(it, memphis, group))
                     }
@@ -64,7 +69,16 @@ internal class ConsumerImpl constructor(
         }
     }
 
-    private fun pingConsumer() = memphis.scope.launch {
+    override suspend fun fetch(): Flow<Message> = flow {
+        consumingStatus = ConsumingStatus.ACTIVE
+        while (currentCoroutineContext().isActive) {
+            subscription.pull(1)
+            val msg = subscription.nextMessage(0)
+            emit(Message(msg, memphis, group))
+        }
+    }
+
+    internal fun pingConsumer() = memphis.scope.launch {
         if (subscriptionStatus != SubscriptionStatus.ACTIVE) {
             throw MemphisError("started ping for inactive subscription")
         }
@@ -99,11 +113,11 @@ internal class ConsumerImpl constructor(
 
     override fun stopConsuming() {
         if (consumingStatus == ConsumingStatus.INACTIVE) throw MemphisError("Consumer is inactive")
-        tickerJob!!.cancel()
+        tickerJob?.cancel()
         consumingStatus = ConsumingStatus.INACTIVE
     }
 
-    override fun destroy() {
+    override suspend fun destroy() {
         if (consumingStatus == ConsumingStatus.ACTIVE) {
             stopConsuming()
         }

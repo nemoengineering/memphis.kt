@@ -14,8 +14,8 @@ import kotlin.time.toJavaDuration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 
 class Memphis private constructor(
@@ -58,21 +58,20 @@ class Memphis private constructor(
         brokerConnection.close()
     }
 
-    fun consumer(stationName: String, consumerName: String) =
-        consumer(stationName, consumerName, Consumer.Options())
+    suspend fun consumer(
+        stationName: String,
+        consumerName: String,
+        options: (Consumer.Options.() -> Unit)? = null
+    ): Consumer {
+        val opts = options?.let { Consumer.Options().apply(it) } ?: Consumer.Options()
 
-
-    fun consumer(stationName: String, consumerName: String, options: Consumer.Options.() -> Unit) =
-        consumer(stationName, consumerName, Consumer.Options().apply(options))
-
-    private fun consumer(stationName: String, consumerName: String, options: Consumer.Options): Consumer {
-        val cName = if (options.genUniqueSuffix) {
+        val cName = if (opts.genUniqueSuffix) {
             extendNameWithRandSuffix(consumerName)
         } else {
             consumerName
         }.toInternalName()
 
-        val groupName = (options.consumerGroup ?: consumerName).toInternalName()
+        val groupName = (opts.consumerGroup ?: consumerName).toInternalName()
 
         val pullOptions = PullSubscribeOptions.builder()
             .durable(groupName)
@@ -85,27 +84,27 @@ class Memphis private constructor(
             cName,
             stationName.toInternalName(),
             groupName,
-            options.pullInterval,
-            options.batchSize,
-            options.batchMaxTimeToWait,
-            options.maxAckTime,
-            options.maxMsgDeliveries,
+            opts.pullInterval,
+            opts.batchSize,
+            opts.batchMaxTimeToWait,
+            opts.maxAckTime,
+            opts.maxMsgDeliveries,
             subscription
         )
         createResource(consumerImpl)
+        consumerImpl.pingConsumer()
 
         return consumerImpl
     }
 
-    fun producer(stationName: String, producerName: String) =
-        producer(stationName, producerName, Producer.Options())
+    suspend fun producer(
+        stationName: String,
+        producerName: String,
+        options: (Producer.Options.() -> Unit)? = null
+    ): Producer {
+        val opts = options?.let { Producer.Options().apply(it) } ?: Producer.Options()
 
-
-    fun producer(stationName: String, producerName: String, options: Producer.Options.() -> Unit) =
-        producer(stationName, producerName, Producer.Options().apply(options))
-
-    private fun producer(stationName: String, producerName: String, options: Producer.Options): Producer {
-        val pName = if (options.genUniqueSuffix) {
+        val pName = if (opts.genUniqueSuffix) {
             extendNameWithRandSuffix(producerName)
         } else {
             producerName
@@ -114,14 +113,15 @@ class Memphis private constructor(
         val producer = ProducerImpl(
             this,
             pName,
-            stationName
+            stationName.toInternalName()
         )
 
-        scope.launch { stationUpdateManager.listenToSchemaUpdates(stationName.toInternalName()) }
+        stationUpdateManager.listenToSchemaUpdates(stationName.toInternalName())
         try {
             createResource(producer)
         } catch (e: Exception) {
-            runBlocking { stationUpdateManager.removeSchemaUpdateListener(stationName.toInternalName()) }  // TODO: use suspend fun?
+            stationUpdateManager.removeSchemaUpdateListener(stationName.toInternalName())
+            e.printStackTrace()
         }
 
         return producer
@@ -135,23 +135,17 @@ class Memphis private constructor(
         return stationUpdateManager[stationName.toInternalName()].schema
     }
 
-    fun createStation(name: String): Station {
-        return createStation(name, Station.Options())
-    }
+    suspend fun createStation(name: String, options: (Station.Options.() -> Unit)? = null): Station {
+        val opts = options?.let { Station.Options().apply(it) } ?: Station.Options()
 
-    fun createStation(name: String, options: Station.Options.() -> Unit): Station {
-        return createStation(name, Station.Options().apply(options))
-    }
-
-    private fun createStation(name: String, options: Station.Options): Station {
         val station = StationImpl(
             this,
-            name,
-            options.retentionType,
-            options.retentionValue,
-            options.storageType,
-            options.replicas,
-            options.idempotencyWindow,
+            name.toInternalName(),
+            opts.retentionType,
+            opts.retentionValue,
+            opts.storageType,
+            opts.replicas,
+            opts.idempotencyWindow,
             "" // options.schemaName # Available in next release
         )
 
@@ -164,33 +158,33 @@ class Memphis private constructor(
         return station
     }
 
-    fun attachSchema(schemaName: String, stationName: String) {
+    suspend fun attachSchema(schemaName: String, stationName: String) {
         TODO("Available in next release")
         createResource(SchemaLifecycle.Attach(schemaName, stationName))
     }
 
-    fun detachSchema(stationName: String) {
+    suspend fun detachSchema(stationName: String) {
         TODO("Available in next release")
         destroyResource(SchemaLifecycle.Detach(stationName))
     }
 
-    private fun createResource(d: Create) {
+    private suspend fun createResource(d: Create) {
         val subject = d.getCreationSubject()
         val req = d.getCreationRequest()
         logger.debug { "Creating: $subject" }
 
-        val data = brokerConnection.request(subject, req.toString().toByteArray()).get()
+        val data = brokerConnection.request(subject, req.toString().toByteArray()).await()
 
         d.handleCreationResponse(data)
     }
 
-    internal fun destroyResource(d: Destroy) {
+    internal suspend fun destroyResource(d: Destroy) {
         val subject = d.getDestructionSubject()
         val req = d.getDestructionRequest()
 
         logger.debug { "Destroying: $subject" }
 
-        val data = brokerConnection.request(subject, req.toString().toByteArray()).get().data
+        val data = brokerConnection.request(subject, req.toString().toByteArray()).await().data
 
         if (data.isNotEmpty() && !data.toString(Charset.defaultCharset()).contains("not exist")) {
             throw MemphisError(data)

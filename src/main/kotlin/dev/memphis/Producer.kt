@@ -10,7 +10,7 @@ interface Producer {
 
     suspend fun produce(message: ByteArray, options: (ProduceOptions.() -> Unit)? = null)
 
-    fun destroy()
+    suspend fun destroy()
 
     class ProduceOptions {
         var ackWait = 15.seconds
