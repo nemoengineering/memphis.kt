@@ -2,7 +2,6 @@ package dev.memphis
 
 import io.nats.client.JetStreamSubscription
 import java.nio.charset.Charset
-import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -10,10 +9,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.isActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -51,7 +48,7 @@ internal class ConsumerImpl constructor(
     }
 
     private suspend fun startConsumeLoop() = channelFlow {
-         subscribeDlq {
+        subscribeDlq {
             logger.debug { "Received DLQ Message: ${it.data} Headers: ${it.headers}" }
             send(it)
         }

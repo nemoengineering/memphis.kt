@@ -8,6 +8,8 @@ import java.nio.charset.Charset
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import mu.KotlinLogging
@@ -43,7 +45,7 @@ class ProducerImpl(
 
         logger.trace { "Publish Message: ${message.toString(Charset.defaultCharset())} Headers: ${options.headers.headers.toStringAll()}" }
 
-        val data = validateMessage(message)
+        val data = validateMessage(message, options.headers)
 
         val natsMsg = NatsMessage.builder()
             .subject(stationName.toInternalName() + ".final")
@@ -56,21 +58,59 @@ class ProducerImpl(
     }
 
 
-    private fun validateMessage(message: ByteArray): ByteArray {
+    private suspend fun validateMessage(message: ByteArray, headers: Headers): ByteArray {
         val schema = try {
             getSchema()
         } catch (e: Exception) {
-            sendNotification {
-                title = "Schema validation has failed"
-                this.message = "Station: $stationName\nProducer: $name\nError: ${e.message}"
-                code = message.toString(Charset.defaultCharset())
-                type = schemaVFailAlertType
-            }
             throw MemphisError("Schema validation has failed", e)
         }
 
-        return schema.validateMessage(message)
+        return try {
+            schema.validateMessage(message)
+        } catch (e: Exception) {
+            sendMessageToDls(message, headers, e)
+            throw e
+        }
     }
+
+    private suspend fun sendMessageToDls(message: ByteArray, headers: Headers, throwable: Throwable) {
+        if (!memphis.configUpdateManager.sendMessageToDls(stationName)) return
+        val timeSent = Clock.System.now()
+        val dlsHeaders = headers.headers.keySet().associateWith { headers.headers[it].joinToString(" ") }
+
+        val schemaFailMsg = DlsMessage(
+            id = dlsMessageId(timeSent),
+            stationName = stationName,
+            producer = DlsMessage.ProducerDetails(
+                name = name,
+                connectionId = memphis.connectionId
+            ),
+            message = DlsMessage.MessagePayloadDls(
+                timeSent = timeSent,
+                data = message.toString(Charset.defaultCharset()),
+                headers = dlsHeaders
+            ),
+            creationDate = timeSent
+        )
+
+        val msg = Json.encodeToString(schemaFailMsg)
+        memphis.brokerConnection.publish(getDlsSubject("schema", stationName, schemaFailMsg.id), msg.toByteArray())
+
+        if (memphis.configUpdateManager.sendNotification()) {
+            sendNotification {
+                title = "Schema validation has failed"
+                this.message = "Station: $stationName\nProducer: $name\nError: ${throwable.message}"
+                code = message.toString(Charset.defaultCharset())
+                type = schemaVFailAlertType
+            }
+        }
+    }
+
+    private fun dlsMessageId(timeSent: Instant) =
+        "$stationName~$name~0~${timeSent}"
+            .replace(" ", "")
+            .replace(",", "+")
+
 
     private fun sendNotification(block: Notification.() -> Unit) {
         val msg = Notification().apply(block).let { Json.encodeToString(it) }
@@ -114,6 +154,8 @@ class ProducerImpl(
 
         if (res.error != "") throw MemphisError(res.error)
         memphis.stationUpdateManager.applySchema(stationName, res.schemaUpdate)
+        memphis.configUpdateManager.setClusterConfig("send_notification", res.clusterSendNotification)
+        memphis.configUpdateManager.setStationSchemaverseToDls(stationName, res.schemaverseToDls)
     }
 
     override fun getDestructionSubject(): String =
@@ -127,11 +169,12 @@ class ProducerImpl(
     @Serializable
     private data class CreateProducerResponse(
         val error: String,
-        @SerialName("schema_update") val schemaUpdate: SchemaUpdateInit
+        @SerialName("schema_update") val schemaUpdate: SchemaUpdateInit,
+        @SerialName("schemaverse_to_dls") val schemaverseToDls: Boolean,
+        @SerialName("send_notification") val clusterSendNotification: Boolean,
     )
 
     companion object {
         private const val schemaVFailAlertType = "schema_validation_fail_alert"
     }
-
 }

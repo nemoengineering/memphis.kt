@@ -15,7 +15,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
 import mu.KotlinLogging
 
 class Memphis private constructor(
@@ -49,7 +48,8 @@ class Memphis private constructor(
     internal val brokerDispatch: Dispatcher = brokerConnection.createDispatcher()
     private val jetStream: JetStream = brokerConnection.jetStream()
 
-    internal val stationUpdateManager: StationUpdateManager = StationUpdateManager(brokerDispatch, scope)
+    internal val stationUpdateManager = StationUpdateManager(brokerDispatch, scope)
+    internal val configUpdateManager = ConfigUpdateManager(brokerDispatch, scope)
 
     fun isConnected() = brokerConnection.status == Connection.Status.CONNECTED
 
@@ -146,7 +146,9 @@ class Memphis private constructor(
             opts.storageType,
             opts.replicas,
             opts.idempotencyWindow,
-            "" // options.schemaName # Available in next release
+            opts.schemaName,
+            opts.sendPoisonMsgToDls,
+            opts.sendSchemaFailedMsgToDls
         )
 
         try {
@@ -159,12 +161,10 @@ class Memphis private constructor(
     }
 
     suspend fun attachSchema(schemaName: String, stationName: String) {
-        TODO("Available in next release")
         createResource(SchemaLifecycle.Attach(schemaName, stationName))
     }
 
     suspend fun detachSchema(stationName: String) {
-        TODO("Available in next release")
         destroyResource(SchemaLifecycle.Detach(stationName))
     }
 

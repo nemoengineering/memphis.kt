@@ -4,6 +4,7 @@ import kotlin.time.Duration
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 
 class StationImpl(
     private val memphis: Memphis,
@@ -13,11 +14,12 @@ class StationImpl(
     override val storageType: StorageType,
     override val replicas: Int,
     override val idempotencyWindow: Duration,
-    private val createWithSchemaName: String?
+    private val createWithSchemaName: String?,
+    override val sendPoisonMsgToDls: Boolean,
+    override val sendSchemaFailedMsgToDls: Boolean
 ) : Station, Lifecycle {
-    override val schemaName: String?
+    override val schemaName: String
         get() {
-            TODO("Available in next release")
             return memphis.getStationSchema(name).name
         }
 
@@ -44,6 +46,10 @@ class StationImpl(
         put("replicas", replicas)
         put("idempotency_window_in_ms", idempotencyWindow.inWholeMilliseconds.toInt())
         put("schema_name", createWithSchemaName ?: "")
+        putJsonObject("dls_configuration") {
+            put("poison", sendPoisonMsgToDls)
+            put("schemaverse", sendSchemaFailedMsgToDls)
+        }
     }
 
     override fun getDestructionSubject(): String =

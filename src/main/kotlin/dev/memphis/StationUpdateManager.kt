@@ -3,7 +3,6 @@ package dev.memphis
 import io.nats.client.Dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
@@ -18,7 +17,7 @@ internal class StationUpdateManager(
     private val mutex = Mutex()
 
     operator fun get(stationName: String): StationUpdateSubscription = stationUpdateSubscriptions[stationName]
-            ?: throw MemphisError("station subscription doesn't exist")
+        ?: throw MemphisError("station subscription doesn't exist")
 
     suspend fun listenToSchemaUpdates(stationName: String) {
         val subs = stationUpdateSubscriptions[stationName]
