@@ -1,5 +1,6 @@
-package dev.memphis
+package dev.memphis.sdk
 
+import dev.memphis.sdk.resources.ConfigurationsUpdate
 import io.nats.client.Dispatcher
 import io.nats.client.MessageHandler
 import io.nats.client.Subscription

@@ -1,4 +1,4 @@
-package dev.memphis
+package dev.memphis.sdk.resources
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName

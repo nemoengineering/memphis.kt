@@ -1,5 +1,7 @@
-package dev.memphis
+package dev.memphis.sdk.station
 
+import dev.memphis.sdk.MemphisError
+import dev.memphis.sdk.resources.SchemaUpdateInit
 import io.nats.client.Dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

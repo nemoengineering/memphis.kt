@@ -1,4 +1,4 @@
-package dev.memphis
+package dev.memphis.sdk.station
 
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes

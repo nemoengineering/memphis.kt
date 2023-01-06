@@ -1,6 +1,8 @@
-package dev.memphis
+package dev.memphis.sdk.schemas
 
 import com.google.protobuf.DescriptorProtos
+import dev.memphis.sdk.MemphisError
+import dev.memphis.sdk.resources.SchemaVersion
 
 internal class ProtobufSchema(
     name: String,

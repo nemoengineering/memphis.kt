@@ -1,4 +1,4 @@
-package dev.memphis
+package dev.memphis.sdk.resources
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

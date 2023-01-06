@@ -1,5 +1,6 @@
-package dev.memphis
+package dev.memphis.sdk.producer
 
+import dev.memphis.sdk.Headers
 import kotlin.time.Duration.Companion.seconds
 
 interface Producer {

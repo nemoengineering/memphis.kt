@@ -1,5 +1,13 @@
-package dev.memphis
+package dev.memphis.sdk.station
 
+import dev.memphis.sdk.resources.SchemaType
+import dev.memphis.sdk.resources.SchemaUpdate
+import dev.memphis.sdk.resources.SchemaUpdateInit
+import dev.memphis.sdk.resources.SchemaUpdateType
+import dev.memphis.sdk.schemas.EmptySchema
+import dev.memphis.sdk.schemas.JsonSchema
+import dev.memphis.sdk.schemas.ProtobufSchema
+import dev.memphis.sdk.schemas.Schema
 import io.nats.client.MessageHandler
 import io.nats.client.Subscription
 import java.nio.charset.Charset

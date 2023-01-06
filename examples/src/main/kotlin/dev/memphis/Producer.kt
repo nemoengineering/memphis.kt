@@ -1,16 +1,19 @@
-package dev.memphis
+package dev.memphis.sdk
 
 import kotlinx.coroutines.runBlocking
 
 fun main() {
     runBlocking {
-        val memphis = Memphis.connect("<memphis-host>", "<application type username>", "<broker-token>")
+        val memphis = Memphis.connect("localhost", "adrian", "memphis")
 
-        val producer = memphis.producer("<station-name>", "<producer-name>")
+        val producer = memphis.producer("my-station", "producer_name_2")
 
-        producer.produce("You have a message!".toByteArray()) {
-            headers.put("key", "value")
+        repeat(10) {
+            producer.produce("Message $it".toByteArray()) {
+                headers.put("key", "value")
+            }
         }
+
 
         producer.destroy()
         memphis.close()

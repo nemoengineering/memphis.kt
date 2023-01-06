@@ -1,5 +1,6 @@
-package dev.memphis
+package dev.memphis.sdk.resources
 
+import dev.memphis.sdk.EnumOrdinalSerilizer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

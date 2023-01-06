@@ -1,5 +1,7 @@
-package dev.memphis
+package dev.memphis.sdk.station
 
+import dev.memphis.sdk.Lifecycle
+import dev.memphis.sdk.Memphis
 import kotlin.time.Duration
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject

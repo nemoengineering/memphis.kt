@@ -1,4 +1,4 @@
-package dev.memphis
+package dev.memphis.sdk
 
 import io.nats.client.Message
 import kotlinx.serialization.json.JsonObject

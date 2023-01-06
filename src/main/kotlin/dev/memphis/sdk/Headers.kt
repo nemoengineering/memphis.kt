@@ -1,4 +1,4 @@
-package dev.memphis
+package dev.memphis.sdk
 
 import io.nats.client.impl.Headers
 

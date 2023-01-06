@@ -1,5 +1,6 @@
-package dev.memphis
+package dev.memphis.sdk.consumer
 
+import dev.memphis.sdk.Message
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.Flow

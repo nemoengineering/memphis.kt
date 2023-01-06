@@ -8,7 +8,7 @@ plugins {
     `maven-publish`
 }
 
-group = "dev.memphis"
+group = "dev.memphis.sdk"
 version = "1.0-SNAPSHOT"
 
 allprojects {

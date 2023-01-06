@@ -1,5 +1,10 @@
-package dev.memphis
+package dev.memphis.sdk.consumer
 
+import dev.memphis.sdk.Lifecycle
+import dev.memphis.sdk.Memphis
+import dev.memphis.sdk.MemphisError
+import dev.memphis.sdk.Message
+import dev.memphis.sdk.toStringAll
 import io.nats.client.JetStreamSubscription
 import java.nio.charset.Charset
 import kotlin.time.Duration
