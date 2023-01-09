@@ -33,7 +33,10 @@ internal enum class SchemaType {
     JSON,
 
     @SerialName("protobuf")
-    PROTOBUF
+    PROTOBUF,
+
+    @SerialName("graphql")
+    GRAPH_QL
 }
 
 @Serializable

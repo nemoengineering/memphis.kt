@@ -28,7 +28,7 @@ dependencies {
 
     implementation("io.nats:jnats:2.16.5")
     implementation("net.pwall.json:json-kotlin-schema:0.39")
-
+    implementation("com.graphql-java:graphql-java:20.0")
     implementation("com.google.protobuf:protobuf-kotlin:3.21.9")
 
     testImplementation(kotlin("test"))

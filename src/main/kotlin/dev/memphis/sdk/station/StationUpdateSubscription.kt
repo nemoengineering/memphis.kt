@@ -5,6 +5,7 @@ import dev.memphis.sdk.resources.SchemaUpdate
 import dev.memphis.sdk.resources.SchemaUpdateInit
 import dev.memphis.sdk.resources.SchemaUpdateType
 import dev.memphis.sdk.schemas.EmptySchema
+import dev.memphis.sdk.schemas.GraphQlSchema
 import dev.memphis.sdk.schemas.JsonSchema
 import dev.memphis.sdk.schemas.ProtobufSchema
 import dev.memphis.sdk.schemas.Schema
@@ -63,6 +64,7 @@ internal class StationUpdateSubscription {
             SchemaType.NO_SCHEMA -> EmptySchema()
             SchemaType.JSON -> JsonSchema(init.schemaName, init.schemaVersion)
             SchemaType.PROTOBUF -> ProtobufSchema(init.schemaName, init.schemaVersion)
+            SchemaType.GRAPH_QL -> GraphQlSchema(init.schemaName, init.schemaVersion)
         }
     }
 
