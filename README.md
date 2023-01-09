@@ -80,7 +80,7 @@ Once connected, all features offered by Memphis are available.<br>
 To disconnect from Memphis, call Close() on the Memphis connection object.<br>
 
 ```kotlin
-memphis.close();
+memphis.close()
 ```
 
 ### Creating a Station
@@ -268,17 +268,17 @@ consumer.subscribeDls().collect {
 ### Acknowledging a Message
 Acknowledging a message indicates to the Memphis server to not <br>re-send the same message again to the same consumer or consumers group.
 
-```shell
-message.ack();
+```kotlin
+message.ack()
 ```
 
 ### Get headers
 Get headers per message
 ```kotlin
-val headers =  msg.headers
+val headers = msg.headers
 ```
 ### Destroying a Consumer
 
-```shell
-consumer.destroy();
+```kotlin
+consumer.destroy()
 ```
