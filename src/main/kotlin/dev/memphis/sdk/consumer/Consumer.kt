@@ -14,9 +14,14 @@ interface Consumer {
     val maxAckTime: Duration
     val maxMsgDeliveries: Int
 
+    // Consume Messages and DLS Messages in one loop
     suspend fun consume(): Flow<Message>
 
-    suspend fun fetch(): Flow<Message>
+    // Only fetch messages
+    suspend fun subscribeMessages(): Flow<Message>
+
+    // Only subscribe to DLS messages
+    suspend fun subscribeDls(): Flow<Message>
 
     fun stopConsuming()
 
