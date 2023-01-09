@@ -1,14 +1,22 @@
-package dev.memphis
+package dev.memphis.sdk.consumer
 
+import dev.memphis.sdk.Lifecycle
+import dev.memphis.sdk.Memphis
+import dev.memphis.sdk.MemphisError
+import dev.memphis.sdk.Message
+import dev.memphis.sdk.toStringAll
 import io.nats.client.JetStreamSubscription
 import java.nio.charset.Charset
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
@@ -37,17 +45,12 @@ internal class ConsumerImpl constructor(
     private var pingJob: Job? = null
 
     override suspend fun consume(): Flow<Message> {
-        if (consumingStatus == ConsumingStatus.ACTIVE) throw MemphisError("Already consuming")
-
-        return startConsumeLoop().also {
-            consumingStatus = ConsumingStatus.ACTIVE
-        }
+        setConsumeActive()
+        return startConsumeLoop()
     }
 
     private suspend fun startConsumeLoop() = channelFlow {
-        pingConsumer()
-
-        subscribeDlq {
+        subscribeDls {
             logger.debug { "Received DLQ Message: ${it.data} Headers: ${it.headers}" }
             send(it)
         }
@@ -55,8 +58,9 @@ internal class ConsumerImpl constructor(
             while (true) {
                 subscription.fetch(batchSize, batchMaxTimeToWait.toJavaDuration())
                     .forEach {
+                        println("Received Message")
                         logger.trace { "Received Message: ${it.data.toString(Charset.defaultCharset())} Headers: ${it.headers.toStringAll()}" }
-                        send(Message(it, memphis, group))
+                        send(it.toSdkMessage())
                     }
 
                 delay(pullInterval)
@@ -64,7 +68,33 @@ internal class ConsumerImpl constructor(
         }
     }
 
-    private fun pingConsumer() = memphis.scope.launch {
+    private fun setConsumeActive() {
+        if (consumingStatus == ConsumingStatus.ACTIVE) throw MemphisError("Already consuming")
+        consumingStatus = ConsumingStatus.ACTIVE
+    }
+
+    private fun io.nats.client.Message.toSdkMessage() = Message(this, memphis, group)
+
+    override suspend fun subscribeMessages(): Flow<Message> = flow {
+        setConsumeActive()
+
+        while (currentCoroutineContext().isActive) {
+            subscription.pull(1)
+            val msg = subscription.nextMessage(0)
+            emit(Message(msg, memphis, group))
+        }
+    }
+
+    override suspend fun subscribeDls() = flow {
+        setConsumeActive()
+
+        subscribeDls {
+            emit(it)
+        }
+    }
+
+
+    internal fun pingConsumer() = memphis.scope.launch {
         if (subscriptionStatus != SubscriptionStatus.ACTIVE) {
             throw MemphisError("started ping for inactive subscription")
         }
@@ -85,25 +115,25 @@ internal class ConsumerImpl constructor(
         }
     }
 
-    private suspend fun subscribeDlq(callback: suspend (msg: Message) -> Unit) {
+    private suspend fun subscribeDls(callback: suspend (msg: Message) -> Unit) {
         memphis.brokerDispatch.subscribe(
-            "${'$'}memphis_dlq_${stationName}_${group}",
-            "${'$'}memphis_dlq_${stationName}_${group}"
+            "${'$'}memphis_dls_${stationName}_${group}",
+            "${'$'}memphis_dls_${stationName}_${group}"
         )
         {
             runBlocking {
-                callback(Message(it, memphis, group))
+                callback(it.toSdkMessage())
             }
         }
     }
 
     override fun stopConsuming() {
         if (consumingStatus == ConsumingStatus.INACTIVE) throw MemphisError("Consumer is inactive")
-        tickerJob!!.cancel()
+        tickerJob?.cancel()
         consumingStatus = ConsumingStatus.INACTIVE
     }
 
-    override fun destroy() {
+    override suspend fun destroy() {
         if (consumingStatus == ConsumingStatus.ACTIVE) {
             stopConsuming()
         }

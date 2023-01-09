@@ -1,5 +1,6 @@
 package dev.memphis
 
+import dev.memphis.sdk.Memphis
 import java.nio.charset.Charset
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay

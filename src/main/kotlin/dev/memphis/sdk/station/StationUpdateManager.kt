@@ -1,5 +1,7 @@
-package dev.memphis
+package dev.memphis.sdk.station
 
+import dev.memphis.sdk.MemphisError
+import dev.memphis.sdk.resources.SchemaUpdateInit
 import io.nats.client.Dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -33,6 +35,7 @@ internal class StationUpdateManager(
         stationSub.startSubscription(sub)
 
         stationUpdateSubscriptions[stationName] = stationSub
+        println("applying $stationName")
     }
 
     suspend fun removeSchemaUpdateListener(stationName: String) {

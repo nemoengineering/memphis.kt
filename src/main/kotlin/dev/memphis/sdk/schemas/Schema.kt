@@ -1,4 +1,4 @@
-package dev.memphis
+package dev.memphis.sdk.schemas
 
 internal abstract class Schema(
     val name: String

@@ -1,5 +1,7 @@
-package dev.memphis
+package dev.memphis.sdk.schemas
 
+import dev.memphis.sdk.MemphisError
+import dev.memphis.sdk.resources.SchemaVersion
 import java.nio.charset.Charset
 import net.pwall.json.schema.JSONSchema
 

@@ -1,4 +1,4 @@
-package dev.memphis
+package dev.memphis.sdk
 
 import io.nats.client.impl.Headers
 import kotlin.random.Random
@@ -38,6 +38,5 @@ internal open class EnumOrdinalSerilizer<E : Enum<E>>(
     }
 }
 
-enum class Test {
-    Val
-}
+internal fun getDlsSubject(type: String, stationName: String, id: String) =
+    "\$memphis-$stationName-dls.$type.$id"

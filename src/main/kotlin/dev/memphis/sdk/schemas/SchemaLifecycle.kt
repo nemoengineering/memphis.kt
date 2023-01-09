@@ -1,5 +1,7 @@
-package dev.memphis
+package dev.memphis.sdk.schemas
 
+import dev.memphis.sdk.Create
+import dev.memphis.sdk.Destroy
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put

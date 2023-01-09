@@ -1,4 +1,4 @@
-package dev.memphis
+package dev.memphis.sdk.station
 
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -22,10 +22,12 @@ interface Station {
     val replicas: Int
     val idempotencyWindow: Duration
     val schemaName: String?
+    val sendPoisonMsgToDls: Boolean
+    val sendSchemaFailedMsgToDls: Boolean
 
-    fun attachSchema(schemaName: String)
+    suspend fun attachSchema(schemaName: String)
 
-    fun detachSchema()
+    suspend fun detachSchema()
 
     suspend fun destroy()
 
@@ -35,6 +37,8 @@ interface Station {
         var storageType = StorageType.DISK
         var replicas = 1
         var idempotencyWindow = 2.minutes
-        //var schemaName: String? = null # Available in next release
+        var schemaName: String? = null
+        var sendPoisonMsgToDls = true
+        var sendSchemaFailedMsgToDls = true
     }
 }

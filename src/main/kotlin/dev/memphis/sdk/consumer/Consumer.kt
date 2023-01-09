@@ -1,5 +1,6 @@
-package dev.memphis
+package dev.memphis.sdk.consumer
 
+import dev.memphis.sdk.Message
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.Flow
@@ -13,11 +14,18 @@ interface Consumer {
     val maxAckTime: Duration
     val maxMsgDeliveries: Int
 
+    // Consume Messages and DLS Messages in one loop
     suspend fun consume(): Flow<Message>
+
+    // Only fetch messages
+    suspend fun subscribeMessages(): Flow<Message>
+
+    // Only subscribe to DLS messages
+    suspend fun subscribeDls(): Flow<Message>
 
     fun stopConsuming()
 
-    fun destroy()
+    suspend fun destroy()
 
     class Options {
         var consumerGroup: String? = null

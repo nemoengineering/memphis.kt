@@ -8,7 +8,7 @@ plugins {
     `maven-publish`
 }
 
-group = "dev.memphis"
+group = "dev.memphis.sdk"
 version = "1.0-SNAPSHOT"
 
 allprojects {
@@ -24,9 +24,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+
     implementation("io.nats:jnats:2.16.5")
     implementation("net.pwall.json:json-kotlin-schema:0.39")
-
+    implementation("com.graphql-java:graphql-java:20.0")
     implementation("com.google.protobuf:protobuf-kotlin:3.21.9")
 
     testImplementation(kotlin("test"))
@@ -56,7 +58,8 @@ subprojects {
     }
 
     dependencies {
-        implementation("org.apache.logging.log4j:log4j-core:2.19.0")
+        implementation("ch.qos.logback:logback-classic:1.4.5")
+        implementation("net.logstash.logback:logstash-logback-encoder:7.1.1")
 
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")

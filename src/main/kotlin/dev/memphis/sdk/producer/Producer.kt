@@ -1,5 +1,6 @@
-package dev.memphis
+package dev.memphis.sdk.producer
 
+import dev.memphis.sdk.Headers
 import kotlin.time.Duration.Companion.seconds
 
 interface Producer {
@@ -10,7 +11,7 @@ interface Producer {
 
     suspend fun produce(message: ByteArray, options: (ProduceOptions.() -> Unit)? = null)
 
-    fun destroy()
+    suspend fun destroy()
 
     class ProduceOptions {
         var ackWait = 15.seconds
