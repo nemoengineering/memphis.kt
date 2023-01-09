@@ -5,16 +5,13 @@ import kotlinx.coroutines.runBlocking
 
 fun main() {
     runBlocking {
-        val memphis = Memphis.connect("localhost", "root", "memphis")
+        val memphis = Memphis.connect("<memphis-host>", "<application type username>", "<broker-token>")
 
-        val producer = memphis.producer("test", "producer_name_2")
+        val producer = memphis.producer("<station-name>", "<producer-name>")
 
-        repeat(10) {
-            producer.produce("""query myQuery {greeting} mutation msg { updateUserEmail( email:"http://github.com/" id:1){id name}}""".toByteArray()) {
-                headers.put("key", "value")
-            }
+        producer.produce("You have a message!".toByteArray()) {
+            headers.put("key", "value")
         }
-
 
         producer.destroy()
         memphis.close()
